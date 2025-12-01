@@ -154,7 +154,14 @@ app.put("/api/profile", authMiddleware, async(req,res) =>{
 })
 
 
+// ПРОВЕРКА АДМИНА
 
+function adminOnly(req,res,next){
+    if(req.user.role !== "admin"){
+        return res.status(403).json({message: "Forbidden"})
+    }
+    next()
+}
 
 
 app.listen("5588", () =>{
