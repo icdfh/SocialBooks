@@ -2,13 +2,32 @@ const express = require("express")
 const pool = require("./db")
 const bcrypt = require("bcrypt")
 const jwt = require("jsonwebtoken")
+const multer = require("multer")
+const path = require("path")
+
 
 const app = express();
 
 app.use(express.json())
+app.use("/upload", express.static("upload"))
 app.use(express.static("public"))
 
 const JWT_SECRET = "SUPER_SECRET_KEY"
+
+
+// ХРАНИЛИЩЕ ДЛЯ МЕДИЯ
+
+const storage = multer.diskStorage({
+    destination: (req,file,cb) => {
+        cb(null, "upload/")
+    },
+    filename: (req,file,cb) =>{
+        const uniqueName = Date.now() + path.extname(file.originalname)
+        cb(null,uniqueName)
+    }
+})
+
+const upload = multer({storage})
 
 
 // ПРОМЕЖУТОЧНЫЙ ОБРАБОТЧИК ДЛЯ JWT
@@ -102,7 +121,7 @@ app.post("/api/auth/login", async(req,res)=>{
     }
     catch(error){
         console.error("Login error: ", error)
-        res.json(500).json({message: "Server error"});
+        res.status(500).json({message: "Server error"});
     }
 })
 
@@ -128,7 +147,32 @@ app.get("/api/profile", authMiddleware, async(req,res)=>{
     }
 
 })
+app.put("/api/profile/avatar", authMiddleware, upload.single("avatar"), async(req,res) =>{
+        try{
+            const userID = req.user.id
 
+            if(!req.file){
+                return res.status(400).json({message: "File is required"})
+            }
+
+            const avatarPath = "/upload/" + req.file.filename
+
+            const result = await pool.query(`
+                    UPDATE users SET avatar_url = $1 WHERE id = $2 RETURNING id, username,email,avatar_url,role
+                `, [avatarPath, userID])
+
+                res.json({
+                    message:"Avatar updated",
+                    user: result.rows[0]
+                })
+        }
+        catch(err){
+            console.error(err)
+            res.status(500).json({message: "Server error"})
+        }
+})
+
+// ОБНОВЛЕНИЕ ПРОФИЛЯ
 app.put("/api/profile", authMiddleware, async(req,res) =>{
         try{
             const userID = req.user.id
@@ -152,6 +196,29 @@ app.put("/api/profile", authMiddleware, async(req,res) =>{
             res.status(500).json({message: "Server error"})
         }
 })
+// УДАЛЕНИЕ ПРОФИЛЯ
+app.delete("/api/profile", authMiddleware, async (req, res) => {
+    try {
+        const userId = req.user.id;
+
+        const result = await pool.query(
+            "DELETE FROM users WHERE id = $1 RETURNING id, username, email",
+            [userId]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        res.json({
+            message: "Profile deleted",
+            deleted: result.rows[0]
+        });
+    } catch (error) {
+        console.error("Delete profile error:", error);
+        res.status(500).json({ message: "Server error" });
+    }
+});
 
 
 // ПРОВЕРКА АДМИНА
@@ -163,7 +230,22 @@ function adminOnly(req,res,next){
     next()
 }
 
+// СПИСОК ВСЕХ ЮЗЕРОВ ДЛЯ АДМИНА
+app.get("/api/users", authMiddleware, adminOnly, async (req, res) => {
+    try {
+        const result = await pool.query(
+            "SELECT id, username, email, avatar_url, role, created_at FROM users ORDER BY id"
+        );
+        res.json(result.rows);
+    } catch (error) {
+        console.error("Users list error:", error);
+        res.status(500).json({ message: "Server error" });
+    }
+});
 
-app.listen("5588", () =>{
+
+
+
+app.listen(5588, () =>{
     console.log("Server working, http://localhost:5588")
 })
