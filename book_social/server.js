@@ -243,6 +243,50 @@ app.get("/api/users", authMiddleware, adminOnly, async (req, res) => {
     }
 });
 
+// ---------------POSTS-----------------
+
+// CREATE POST
+app.post("/api/posts", authMiddleware, upload.single("post_img"), async(req,res)=>{
+    try{
+        const userId = req.user.id
+        const {book_title, content} = req.body
+
+        let imgPath = null;
+        if(req.file) imgPath = "/upload/" + req.file.filename;
+
+        const result = await pool.query(`
+            INSERT INTO posts (user_id, book_title,content,post_img)
+            VALUES ($1,$2,$3,$4) RETURNING * 
+            `, [userId, book_title,content,imgPath])
+
+        res.status(201).json({message: "Post was created", post: result.rows[0]})
+    }
+    catch(err){
+        console.error("Create post error:", err);
+        res.status(500).json({message: "Server error"})
+    }
+})
+
+// GET ALL POSTS получить список всех постов
+
+app.get("/api/posts", async(req,res) =>{
+    try{
+        const result = await pool.query(`
+            SELECT p.*, u.username 
+            FROM posts p
+            JOIN users u ON u.id = p.user_id
+            ORDER BY created_at DESC
+            `)
+        res.json(result.rows)
+    }
+    catch (err){
+        console.error("Get posts error", err)
+        res.status(500).json({message: "Server error"})
+    }
+})
+
+
+
 
 
 
