@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Main Page</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- LEFT -->
+  <aside class="sidebar">
+    <div class="sidebar-top">
+      <h2>LOGO</h2>
+      <button onclick="loadPosts()">Main page</button>
+      <button>Trade in</button>
+      <button>Friends</button>
+      <button>Chat</button>
+      <button onclick="loadSaved()">Saves</button>
+    </div>
+
+    <div class="sidebar-bot">
+      <button onclick="logout()">Logout</button>
+    </div>
+  </aside>
+
+  <!-- CENTER -->
+  <main class="feed">
+    <h1>Main Page</h1>
+    <div id="posts"></div>
+  </main>
+
+  <!-- RIGHT -->
+  <aside class="right" id="profile"></aside>
+
+</div>
+
+<!-- CREATE POST -->
+<button class="create-btn" onclick="openCreate()">＋</button>
+
+<div id="createModal" class="modal hidden">
+  <form id="createForm">
+    <input name="book_title" placeholder="Title" required>
+    <textarea name="content" placeholder="Content"></textarea>
+    <input type="file" name="post_img">
+    <button>Create</button>
+  </form>
+</div>
+
+<!-- AVATAR MODAL -->
+<div id="avatarModal" class="modal hidden">
+  <form id="avatarForm">
+    <input type="file" name="avatar" required>
+    <button>Update avatar</button>
+  </form>
+</div>
+
+<script src="/api.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

@@ -17,6 +17,10 @@ const JWT_SECRET = "SUPER_SECRET_KEY"
 
 // ХРАНИЛИЩЕ ДЛЯ МЕДИЯ
 
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public/auth/login.html"));
+});
+
 const storage = multer.diskStorage({
     destination: (req,file,cb) => {
         cb(null, "upload/")
@@ -284,6 +288,222 @@ app.get("/api/posts", async(req,res) =>{
         res.status(500).json({message: "Server error"})
     }
 })
+
+// UPDATE POST
+app.put("/api/posts/:id", authMiddleware, upload.single("post_img"), async (req, res) => {
+    try {
+        const userId = req.user.id
+        const postId = req.params.id
+        const { book_title, content } = req.body
+
+        // Проверяем, что пост существует и принадлежит пользователю
+        const postCheck = await pool.query(
+            `SELECT * FROM posts WHERE id = $1`,
+            [postId]
+        )
+
+        if (postCheck.rows.length === 0) {
+            return res.status(404).json({ message: "Post not found" })
+        }
+
+        const post = postCheck.rows[0]
+
+        if (post.user_id !== userId) {
+            return res.status(403).json({ message: "You are not the owner of this post" })
+        }
+
+        let imgPath = post.post_img
+        if (req.file) {
+            imgPath = "/upload/" + req.file.filename
+        }
+
+        const result = await pool.query(
+            `
+            UPDATE posts
+            SET 
+                book_title = COALESCE($1, book_title),
+                content = COALESCE($2, content),
+                post_img = $3
+            WHERE id = $4
+            RETURNING *
+            `,
+            [book_title, content, imgPath, postId]
+        )
+
+        res.json({
+            message: "Post updated",
+            post: result.rows[0]
+        })
+
+    } catch (error) {
+        console.error("Update post error:", error)
+        res.status(500).json({ message: "Server error" })
+    }
+})
+
+// DELETE POST
+app.delete("/api/posts/:id", authMiddleware, async (req, res) => {
+    try {
+        const userId = req.user.id
+        const postId = req.params.id
+
+        const postCheck = await pool.query(
+            `SELECT * FROM posts WHERE id = $1`,
+            [postId]
+        )
+
+        if (postCheck.rows.length === 0) {
+            return res.status(404).json({ message: "Post not found" })
+        }
+
+        const post = postCheck.rows[0]
+
+        if (post.user_id !== userId) {
+            return res.status(403).json({ message: "You are not the owner of this post" })
+        }
+
+        await pool.query(
+            `DELETE FROM posts WHERE id = $1`,
+            [postId]
+        )
+
+        res.json({ message: "Post deleted" })
+
+    } catch (error) {
+        console.error("Delete post error:", error)
+        res.status(500).json({ message: "Server error" })
+    }
+})
+
+// --------------- POSTS LIKE, COMMENT, SAVED -----------------
+
+// toogle like
+app.post("/api/posts/:id/like", authMiddleware, async(req,res) =>{
+    try{
+        const userId = req.user.id
+        const postId = req.params.id
+
+        const exist = await pool.query(
+            `SELECT id FROM post_likes WHERE user_id = $1 AND post_id = $2`,[userId,postId]
+        )
+
+        if(exist.rows.length > 0){
+            await pool.query(`DELETE FROM post_likes WHERE user_id = $1 AND post_id = $2`, [userId, postId])
+            return res.json({liked: false})
+        }
+
+        await pool.query(
+            `INSERT INTO post_likes (user_id, post_id) VALUES ($1, $2)`, [userId, postId]
+        )
+        res.json({liked:true})
+    }
+    catch(err){
+        console.error("Like error", err)
+        res.status(500).json({message: "Server error"})
+    }
+})
+
+// ADD comment
+
+app.post("/api/posts/:id/comments", authMiddleware, async(req,res) =>{
+    try{
+        const userId = req.user.id
+        const postId = req.params.id
+        const {content} = req.body
+
+        if(!content){
+            return res.status(400).json({message: "Content required"})
+        }
+
+        const result = await pool.query(`
+                INSERT INTO comments (user_id, post_id, content)
+                VALUES($1,$2,$3)
+                RETURNING *
+            `,[userId, postId, content])
+        
+            res.status(201).json(result.rows[0])
+    }
+    catch(err){
+        console.error("Comment error", err)
+        res.status(500).json({message: "Server error"})
+    }
+})
+
+// GET COMMENT
+
+app.get("/api/posts/:id/comments", async(req,res)=>{
+    try{
+        const postId = req.params.id
+        
+        const result = await pool.query(`
+            SELECT c.*, u.username, u.avatar_url
+            FROM comments c
+            JOIN users u ON u.id = c.user_id
+            WHERE c.post_id = $1
+            ORDER BY c.created_at ASC
+            `, [postId])
+            res.json(result.rows)
+    }
+    catch(err){
+        console.error("Get comments error", err)
+        res.status(500).json({message: "Server error"})
+    }
+})
+// SAVED POSTS
+
+app.post("/api/posts/:id/save", authMiddleware, async(req,res) =>{
+    try{
+        const userId = req.user.id
+        const postId = req.params.id
+        
+        const exists = await pool.query(`
+                SELECT id FROM saved_posts WHERE user_id = $1 AND post_id = $2 
+            `, [userId, postId])
+
+        if(exists.rows.length > 0){
+            await pool.query(`
+                DELETE FROM saved_posts WHERE user_id = $1 AND post_id = $2
+                `,[userId, postId])
+                return res.json({saved: false})
+        }
+        await pool.query(
+
+            `INSERT INTO saved_posts (user_id, post_id) VALUES ($1,$2)`,
+            [userId, postId]
+        )
+        res.json({saved:true})
+    }
+    catch(err){
+        console.error("Save error", err)
+        res.status(500).json({message: "Server error"})
+    }
+})
+
+// GET SAVED POSTS
+
+app.get("/api/saved", authMiddleware, async(req,res)=>{
+    try{
+        const userId = req.user.id
+
+        const result =  await pool.query(`
+            
+            SELECT p.*, u.username 
+            FROM saved_posts s
+            JOIN posts p ON p.id = s.post_id
+            JOIN users u ON u.id = p.user_id
+            WHERE s.user_id = $1
+            ORDER BY s.created_at DESC
+
+            `,[userId])
+        
+        res.json(result.rows)
+    }
+    catch(err){
+        console.log("Saved posts error", err)
+        res.status(500).json({message: "Server error"})
+    }
+})
+
 
 
 
