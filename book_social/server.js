@@ -503,8 +503,83 @@ app.get("/api/saved", authMiddleware, async(req,res)=>{
         res.status(500).json({message: "Server error"})
     }
 })
+// ============== FRIENDS ===============
 
+// Сама заявка в друзья
+app.post("/api/friends/request/:id", authMiddleware, async(req,res) =>{
+    try{
+        const requestId = req.user.id
+        const receiverId = req.params.id
 
+        if( requestId == receiverId){
+            return res.status(400).json({message: "Cannot add yourself"})
+        }
+
+        const exists = await pool.query(`
+                SELECT * FROM friends 
+                WHERE (requester_id = $1 AND receiver_id = $2) 
+                OR (requester_id = $2 AND receiver_id = $1)
+            `, [requestId, receiverId])
+
+        if(exists.rows.length > 0){
+            return res.status(400).json({message: "Request already exist"})
+        }
+        await pool.query(
+            `INSERT INTO friends (requester_id, receiver_id, status)
+            VALUES ($1, $2, 'pending')
+            `, [requestId, receiverId])
+
+        res.json({message: "Friend request send"})
+    }
+catch(err){
+    console.error("Friend request error", err)
+    res.status(500).json({message: "Server error"})
+}
+})
+
+// Отображение самой заявки
+app.get("/api/friends/request/", authMiddleware, async(req,res) =>{
+    try{
+        const userId = req.user.id
+
+        const result = await pool.query(`
+                SELECT f.id, u.id as user_id, u.username,u.avatar_url, f.created_at
+                FROM friends f 
+                JOIN users u ON u.id = f.requester_id
+                WHERE f.receiver_id = $1 AND f.status = 'pending' 
+            `, [userId])
+            res.json(result.rows)
+    }
+    catch(err){
+        console.error("Get request error",err)
+        res.status(500).json({message: "Server error"})
+    }
+})
+// Принятие заявки
+app.post("/api/friends/accept/:id", authMiddleware, async(req,res) =>{
+    try{
+        const userId = req.user.id
+        const requestId = req.params.id
+        
+        const result = await pool.query(`
+            
+            UPDATE friends
+            SET status = 'accepted'
+            WHERE id = $1 AND receiver_id = $2 AND status = 'pending'
+            RETURNING *
+            `, [requestId, userId])
+
+            if(result.rows.length === 0 ){
+                return res.status(404).json({message: "Request not found"})
+            }
+            
+            res.json({message: "Friend request accepted"})
+    }
+    catch(err){
+        console.error("Accept friend error", err)
+        res.status(500).json({message:"Server error"})
+    }
+})
 
 
 

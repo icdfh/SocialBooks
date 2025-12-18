@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Main Page</title>
-  <link rel="stylesheet" href="app.css">
+  <link rel="stylesheet" href="app.css" />
 </head>
 <body>
 
@@ -13,9 +13,9 @@
   <aside class="sidebar">
     <div class="sidebar-top">
       <h2>LOGO</h2>
-      <button onclick="loadPosts()">Main page</button>
+      <button onclick="openFeed()">Main page</button>
       <button>Trade in</button>
-      <button>Friends</button>
+      <button onclick="openFriends()">Friends</button>
       <button>Chat</button>
       <button onclick="loadSaved()">Saves</button>
     </div>
@@ -26,7 +26,7 @@
   </aside>
 
   <!-- CENTER -->
-  <main class="feed">
+  <main class="feed" id="feed">
     <h1>Main Page</h1>
     <div id="posts"></div>
   </main>
@@ -41,9 +41,9 @@
 
 <div id="createModal" class="modal hidden">
   <form id="createForm">
-    <input name="book_title" placeholder="Title" required>
+    <input name="book_title" placeholder="Title" required />
     <textarea name="content" placeholder="Content"></textarea>
-    <input type="file" name="post_img">
+    <input type="file" name="post_img" />
     <button>Create</button>
   </form>
 </div>
@@ -51,9 +51,19 @@
 <!-- AVATAR MODAL -->
 <div id="avatarModal" class="modal hidden">
   <form id="avatarForm">
-    <input type="file" name="avatar" required>
+    <input type="file" name="avatar" required />
     <button>Update avatar</button>
   </form>
+</div>
+
+<!-- FRIEND SEARCH MODAL -->
+<div id="friendSearchModal" class="modal hidden">
+  <div class="modal-box">
+    <h3>Add friend</h3>
+    <input id="friendSearchInput" placeholder="Username or email" oninput="searchUsers()" />
+    <div id="searchResults"></div>
+    <button onclick="closeFriendSearch()">Close</button>
+  </div>
 </div>
 
 <script src="/api.js"></script>

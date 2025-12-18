@@ -1,0 +1,139 @@
+/* =========================
+   RESET
+========================= */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* =========================
+   COLORS
+========================= */
+:root {
+  --bg: #f6f7f9;
+  --card: #ffffff;
+  --border: #e6e8ec;
+  --text: #1f2937;
+  --muted: #6b7280;
+  --primary: #ff7a2f;
+  --primary-hover: #f0661c;
+}
+
+/* =========================
+   PAGE
+========================= */
+html, body {
+  height: 100%;
+}
+
+body {
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text);
+}
+
+/* =========================
+   AUTH CARD
+========================= */
+form {
+  width: 100%;
+  max-width: 420px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 32px 28px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+}
+
+/* =========================
+   TITLE
+========================= */
+form h2 {
+  font-size: 26px;
+  font-weight: 600;
+  margin-bottom: 24px;
+}
+
+/* =========================
+   INPUTS
+========================= */
+input {
+  width: 100%;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #fff;
+  font-size: 15px;
+  outline: none;
+  transition: border .2s, box-shadow .2s;
+}
+
+input::placeholder {
+  color: var(--muted);
+}
+
+input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(255,122,47,0.15);
+}
+
+/* =========================
+   BUTTON
+========================= */
+button {
+  width: 100%;
+  padding: 14px;
+  margin-top: 10px;
+  border-radius: 10px;
+  border: none;
+  background: var(--primary);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .2s, transform .1s, box-shadow .1s;
+  box-shadow: 0 6px 14px rgba(255,122,47,0.3);
+}
+
+button:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+button:active {
+  transform: translateY(0);
+}
+
+/* =========================
+   LINK
+========================= */
+a {
+  display: block;
+  margin-top: 18px;
+  text-align: center;
+  font-size: 14px;
+  color: var(--muted);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--primary);
+}
+
+/* =========================
+   MOBILE
+========================= */
+@media (max-width: 480px) {
+  form {
+    padding: 26px 20px;
+  }
+
+  form h2 {
+    font-size: 22px;
+  }
+}

@@ -1,32 +1,42 @@
 const form = document.querySelector("form");
 
-form.addEventListener("submit", async (e) => {
-  e.preventDefault();
+if (form) {
+  const emailInput = document.getElementById("email");
+  const passwordInput = document.getElementById("password");
+  const usernameInput = document.getElementById("username");
 
-  const isLogin = location.pathname.includes("login");
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
 
-  const body = {
-    email: email.value,
-    password: password.value
-  };
+    const isRegister = location.pathname.includes("register");
 
-  if (!isLogin) body.username = username.value;
+    const body = {
+      email: emailInput.value.trim(),
+      password: passwordInput.value.trim()
+    };
 
-  const res = await fetch(
-    isLogin ? "/api/auth/login" : "/api/auth/register",
-    {
+    if (isRegister) {
+      body.username = usernameInput.value.trim();
+    }
+
+    const url = isRegister
+      ? "/api/auth/register"
+      : "/api/auth/login";
+
+    const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body)
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert(data.message);
+      return;
     }
-  );
 
-  const data = await res.json();
-
-  if (data.token) {
     localStorage.setItem("token", data.token);
     location.href = "/app/index.html";
-  } else {
-    alert(data.message);
-  }
-});
+  });
+}

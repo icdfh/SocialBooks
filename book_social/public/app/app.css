@@ -32,11 +32,14 @@ body {
   border-right: 1px solid var(--border);
   display: flex;
   justify-content: space-between;
+  flex-direction: column;
+  align-items: flex-start;
 }
 
 .sidebar-top {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
 }
 
 .sidebar button {
@@ -45,7 +48,7 @@ body {
   border: none;
   background: transparent;
   cursor: pointer;
-  text-align: left;
+
 }
 
 .sidebar button:hover {
@@ -190,3 +193,37 @@ body {
 }
 
 .hidden { display: none; }
+
+/* FRIENDS UI */
+.friends-topbar{
+  display:flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 12px 0 18px;
+}
+
+.friends-tabs{
+  display:flex;
+  gap: 10px;
+}
+
+.friends-tabs .tab{
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--card);
+  cursor: pointer;
+}
+
+.friends-tabs .tab.active{
+  border-color: var(--accent);
+}
+
+.friends-tabs .tab:disabled{
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+.modal-box{
+  width: 520px;
+}
